@@ -42,12 +42,22 @@ endif()
 if(TOKCACHE_BUILD_TESTS)
     enable_testing()
 
-    add_executable(test_multiprocess_cache tests/test_multiprocess_cache.cpp)
-    target_link_libraries(test_multiprocess_cache PRIVATE tokcache)
+    add_executable(test_kv_radix tests/test_kv_radix.cpp)
+    target_link_libraries(test_kv_radix PRIVATE tokcache)
 
     add_test(
-        NAME multiprocess_cache_and_ipc
-        COMMAND test_multiprocess_cache
+        NAME test_kv_radix
+        COMMAND test_kv_radix
     )
-    set_tests_properties(multiprocess_cache_and_ipc PROPERTIES TIMEOUT 30)
+    set_tests_properties(test_kv_radix PROPERTIES TIMEOUT 30)
+endif()
+
+if(TOKCACHE_BUILD_TESTS)
+    add_executable(test_arena_lru tests/test_arena_lru.cpp)
+    target_link_libraries(test_arena_lru PRIVATE tokcache)
+    add_test(NAME test_arena_lru COMMAND test_arena_lru)
+
+    add_executable(test_ring_buffer_ipc tests/test_ring_buffer_ipc.cpp)
+    target_link_libraries(test_ring_buffer_ipc PRIVATE tokcache)
+    add_test(NAME test_ring_buffer_ipc COMMAND test_ring_buffer_ipc)
 endif()
