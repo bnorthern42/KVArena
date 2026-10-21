@@ -1,0 +1,119 @@
+#+TITLE: libtokcache
+#+DESCRIPTION: A high-performance, zero-copy C++20 library for local AI agents
+
+* Introduction
+
+=libtokcache= is a high-performance, zero-copy C++20 library designed to enable multiple local AI agent processes running =llama.cpp= to share tokenized contexts, KV-cache states, and deterministic responses over POSIX shared memory (=mmap=). It significantly reduces memory usage and computation time when orchestrating multi-agent LLM systems by allowing them to reuse intermediate computation states.
+
+* Features & Architecture
+
+=libtokcache= operates on a three-layer foundation:
+
+- *Layer A (Radix KV-Cache)*: Precomputed =llama.cpp= sequence KV states are indexed by chained 64-token block hashes. This allows agents to hydrate their KV caches for common prefixes and only run =llama_decode= for the suffixes.
+- *Layer B (Zero-Copy Token IPC)*: Raw =llama_token= (=int32_t=) arrays are stored in POSIX shared memory and referenced via lightweight, 44-byte =TokenRef= descriptors. Agents can publish and resolve token arrays directly from shared memory without detokenizing or copying strings.
+- *Layer C (Deterministic Response Cache)*: Exact output token sequences are keyed by a hash of the prompt tokens and sampling parameters (e.g., temperature, seed). This allows agents to retrieve repeated queries with zero compute overhead.
+
+**Critical Architectural Invariants:**
+1. *NO Raw Pointers in Shared Memory*: All cross-process structs use =uint64_t= byte offsets relative to the shared memory base.
+2. *Cross-Process Atomics*: Uses C++20 =std::atomic_ref<T>= with careful alignment to ensure safe, cross-process synchronization.
+3. *Alignment Requirements*: Strict alignment (e.g., 64 bytes for KV state buffers) is enforced to satisfy SIMD/AVX/GGML tensor read alignments.
+4. *Current =llama.cpp= API Conventions*: Follows modern =llama.cpp= vocabulary, context, and KV API practices.
+
+* Quick Start
+
+Here is an example showing how two agents can share token context and KV state using =libtokcache=:
+
+#+BEGIN_SRC cpp
+#include "tokcache.hpp"
+#include <iostream>
+#include <vector>
+
+int main() {
+    // 1. Initialize shared memory segment (e.g., 512 MB for KV states & token arrays)
+    tokcache::SharedArena shm("/tokcache_bus", 512ULL * 1024 * 1024, true);
+
+    // 2. Load llama.cpp model & create separate contexts
+    llama_backend_init();
+    llama_model_params mparams = llama_model_default_params();
+    llama_model* model = llama_model_load_from_file("model.gguf", mparams);
+
+    llama_context_params cparams = llama_context_default_params();
+    cparams.n_ctx = 4096;
+    llama_context* ctx_agent_a = llama_init_from_model(model, cparams);
+    llama_context* ctx_agent_b = llama_init_from_model(model, cparams);
+
+    tokcache::AgentTokenCache cache_a(shm, model, ctx_agent_a, "qwen2.5-coder-7b-q4_k_m");
+    tokcache::AgentTokenCache cache_b(shm, model, ctx_agent_b, "qwen2.5-coder-7b-q4_k_m");
+
+    // Agent A ingests shared context and gets a TokenRef
+    std::vector<llama_token> shared_tokens = /* ... */;
+    tokcache::TokenRef ref = cache_a.publish_tokens(shared_tokens);
+
+    // Agent A runs its prefill, snapping KV blocks to SHM
+    cache_a.prefill_with_kv_cache(prompt_a, 0);
+
+    // Agent B resolves tokens from SHM via TokenRef (Zero-copy)
+    std::span<const llama_token> zero_copy_prefix = cache_b.resolve_tokens(ref);
+
+    // Agent B hydrates KV cache from SHM, skipping redundant computation!
+    cache_b.prefill_with_kv_cache(prompt_b, 0);
+
+    // ... Clean up ...
+    return 0;
+}
+#+END_SRC
+
+For the full working example, see =examples/agent_demo.cpp= or =agent_demo.cpp=.
+
+* Building
+
+=libtokcache= requires a C++20 compliant compiler, CMake 3.20+, and the =Threads= and =rt= libraries. It can be built as a header-only library, linking against either a mock backend or a real =llama.cpp= installation.
+
+#+BEGIN_SRC bash
+# Configure the build (optionally with AddressSanitizer and testing enabled)
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DTOKCACHE_BUILD_TESTS=ON -DTOKCACHE_ENABLE_ASAN=ON
+
+# Build all targets utilizing all available cores
+cmake --build build -j$(nproc)
+#+END_SRC
+
+*Environment Setup for Jules:*
+If =llama.cpp= isn't vendored as a submodule yet, you can initialize it and build:
+#+BEGIN_SRC bash
+git submodule update --init --recursive && cmake -B build -DTOKCACHE_BUILD_TESTS=ON && cmake --build build -j$(nproc)
+#+END_SRC
+
+* Running Tests
+
+The test suite includes unit tests and =fork()=-based multi-process stress tests to verify memory sharing, LRU eviction, and IPC capabilities.
+
+#+BEGIN_SRC bash
+# Run all configured tests
+ctest --test-dir build --output-on-failure
+#+END_SRC
+
+/Note on testing/: Tests use unique POSIX shared memory names to prevent collisions and explicitly clean up segments to avoid leaking =/dev/shm= space.
+
+* Roadmap
+
+** Phase 1: Core Prototype (Completed)
+- Shared Memory Arena (=SharedArena=)
+- Layer B: Zero-Copy Token IPC (=TokenRef=)
+- Layer A: Chained Block-Hash KV Cache
+- Layer C: Deterministic Response Cache
+
+** Phase 2: Memory Management & Lock-Free IPC (Current)
+- Modularize header layout.
+- LRU Slab Allocator with pinning & temporal eviction.
+- Robin Hood open-addressing hash tables for cache.
+- Lock-free MPMC ring buffer (=RingBufferChannel=) for sub-microsecond IPC latency.
+- Comprehensive multi-process testing suite.
+
+** Phase 3: Advanced KV Manipulation
+- Incremental/cell-range KV extraction for finer granularity.
+- Non-prefix chunk reuse via in-place RoPE position shifting.
+- Robust lock recovery for crashing agent processes.
+
+** Phase 4: Observability & Bindings
+- Shared telemetry counters (e.g. cache hits, evicted slabs) and a CLI inspector (=tokcache-top=).
+- Stable C ABI (=tokcache_c.h=) for integration with Python, Rust, Go, or Elixir.
