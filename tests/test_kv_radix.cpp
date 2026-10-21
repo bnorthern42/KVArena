@@ -82,7 +82,7 @@ int main() {
         cache_a.store_response(full_prompt_a, 0xCAFEBABEULL, resp_tokens);
 
         // Send 44-byte TokenRef to Agent B
-        if (write(pipe_fd[1], &ref, sizeof(ref)) != sizeof(ref)) {
+        if (!arena_a.header()->ipc_bus.push(ref)) {
             _exit(2);
         }
         close(pipe_fd[1]);
@@ -99,13 +99,10 @@ int main() {
     // ========================================================================
     pid_t pid_b = fork();
     if (pid_b == 0) {
-        tokcache::TokenRef ref{};
-        if (read(pipe_fd[0], &ref, sizeof(ref)) != sizeof(ref)) {
-            _exit(3);
-        }
-        close(pipe_fd[0]);
-
         tokcache::SharedArena arena_b(shm_name, ARENA_BYTES, false);
+        tokcache::TokenRef ref{};
+        while (!arena_b.header()->ipc_bus.pop(ref)) { usleep(10); }
+
         llama_model model{};
         llama_context ctx_b_cached{};
         llama_context ctx_b_baseline{};

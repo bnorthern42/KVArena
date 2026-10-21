@@ -1,0 +1,51 @@
+Start testing: Oct 21 18:55 UTC
+----------------------------------------------------------
+1/3 Testing: test_kv_radix
+1/3 Test: test_kv_radix
+Command: "/app/build/test_kv_radix"
+Directory: /app/build
+"test_kv_radix" start time: Oct 21 18:55 UTC
+Output:
+----------------------------------------------------------
+[PASS] Multi-process TokenRef IPC, Response Cache, and Radix KV Hydration verified!
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_kv_radix" end time: Oct 21 18:55 UTC
+"test_kv_radix" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/3 Testing: test_arena_lru
+2/3 Test: test_arena_lru
+Command: "/app/build/test_arena_lru"
+Directory: /app/build
+"test_arena_lru" start time: Oct 21 18:55 UTC
+Output:
+----------------------------------------------------------
+[PASS] LRU Arena test completed
+<end of output>
+Test time =   0.15 sec
+----------------------------------------------------------
+Test Passed.
+"test_arena_lru" end time: Oct 21 18:55 UTC
+"test_arena_lru" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/3 Testing: test_ring_buffer_ipc
+3/3 Test: test_ring_buffer_ipc
+Command: "/app/build/test_ring_buffer_ipc"
+Directory: /app/build
+"test_ring_buffer_ipc" start time: Oct 21 18:55 UTC
+Output:
+----------------------------------------------------------
+[PASS] Ring Buffer IPC test completed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_ring_buffer_ipc" end time: Oct 21 18:55 UTC
+"test_ring_buffer_ipc" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 21 18:55 UTC
