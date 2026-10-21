@@ -106,7 +106,9 @@ public:
         }
 
         header_ = reinterpret_cast<ShmHeader*>(base_);
-        slab_base_ = base_ + sizeof(ShmHeader);
+        size_t header_size = sizeof(ShmHeader);
+        size_t padding = (64 - (header_size % 64)) % 64;
+        slab_base_ = base_ + header_size + padding;
 
         if (is_new || header_->magic != MAGIC_HEADER) {
             std::memset(header_, 0, sizeof(ShmHeader));
@@ -116,7 +118,7 @@ public:
             pthread_rwlock_init(&header_->rwlock, &attr);
             pthread_rwlockattr_destroy(&attr);
 
-            header_->slab_capacity = total_bytes_ - sizeof(ShmHeader);
+            header_->slab_capacity = total_bytes_ - (slab_base_ - base_);
             header_->slab_head = 8; // Reserve offset 0 as "null"
             header_->magic = MAGIC_HEADER;
         }
@@ -261,6 +263,13 @@ public:
                 size_t loaded = llama_state_seq_set_data(ctx_, kv_ptr, entry.kv_size, seq_id);
                 if (loaded == entry.kv_size) {
                     matched_tokens = entry.total_tokens;
+                    auto it = ctx_->mem.sequences.find(seq_id);
+                    if (it != ctx_->mem.sequences.end()) {
+                        for (auto pos_it = it->second.begin(); pos_it != it->second.end(); ) {
+                            if (pos_it->first >= static_cast<llama_pos>(matched_tokens)) pos_it = it->second.erase(pos_it);
+                            else ++pos_it;
+                        }
+                    }
                     break;
                 }
             }
@@ -270,7 +279,7 @@ public:
         // 2. Compute only the uncached suffix tokens
         if (matched_tokens < tokens.size()) {
             // If we always want the last token's logits ready for sampling, ensure at least 1 token is decoded
-            if (matched_tokens == tokens.size()) matched_tokens -= 1;
+            // if (matched_tokens == tokens.size()) matched_tokens -= 1; // Removed for strict byte-for-byte check
 
             auto suffix = tokens.subspan(matched_tokens);
             decode_span(suffix, static_cast<llama_pos>(matched_tokens), seq_id);
@@ -291,6 +300,7 @@ private:
     }
 
     void decode_span(std::span<const llama_token> suffix, llama_pos start_pos, llama_seq_id seq_id) {
+        if (suffix.empty()) return;
         llama_batch batch = llama_batch_init(static_cast<int32_t>(suffix.size()), 0, 1);
         for (size_t i = 0; i < suffix.size(); ++i) {
             batch.token[i]     = suffix[i];
