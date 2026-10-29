@@ -1,4 +1,4 @@
-#include "tokcache.hpp"
+#include "kvarena.hpp"
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -20,19 +20,19 @@ struct ShmCleanupGuard {
 } // namespace
 
 int main() {
-    const std::string shm_name = "/tokcache_test_rb_" + std::to_string(getpid());
+    const std::string shm_name = "/kvarena_test_rb_" + std::to_string(getpid());
     ShmCleanupGuard cleanup(shm_name);
 
     constexpr size_t ARENA_BYTES = 16ULL * 1024 * 1024;
     {
-        tokcache::SharedArena init_arena(shm_name, ARENA_BYTES, true);
+        kvarena::SharedArena init_arena(shm_name, ARENA_BYTES, true);
     }
 
     pid_t pid = fork();
     if (pid == 0) {
         // Child: Consumer
-        tokcache::SharedArena arena(shm_name, ARENA_BYTES, false);
-        tokcache::TokenRef ref;
+        kvarena::SharedArena arena(shm_name, ARENA_BYTES, false);
+        kvarena::TokenRef ref;
 
         // Busy wait for the token ref
         bool received = false;
@@ -51,8 +51,8 @@ int main() {
     }
 
     // Parent: Producer
-    tokcache::SharedArena arena(shm_name, ARENA_BYTES, false);
-    tokcache::TokenRef ref;
+    kvarena::SharedArena arena(shm_name, ARENA_BYTES, false);
+    kvarena::TokenRef ref;
     ref.model_hash = 0xDEADBEEF;
 
     bool pushed = false;

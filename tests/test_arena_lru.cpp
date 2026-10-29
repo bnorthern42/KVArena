@@ -1,4 +1,4 @@
-#include "tokcache.hpp"
+#include "kvarena.hpp"
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -22,12 +22,12 @@ struct ShmCleanupGuard {
 } // namespace
 
 int main() {
-    const std::string shm_name = "/tokcache_test_lru_" + std::to_string(getpid());
+    const std::string shm_name = "/kvarena_test_lru_" + std::to_string(getpid());
     ShmCleanupGuard cleanup(shm_name);
 
     // Create a small shared memory arena
     constexpr size_t ARENA_BYTES = 1024 * 1024; // 1 MB
-    tokcache::SharedArena arena(shm_name, ARENA_BYTES, true);
+    kvarena::SharedArena arena(shm_name, ARENA_BYTES, true);
 
     arena.lock_write();
 

@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/test_ring_buffer_ipc.dir/tests/test_ring_buffer_ipc.cpp.o -o test_ring_buffer_ipc  -lrt
+/usr/bin/c++ -g -fsanitize=address,undefined CMakeFiles/test_ring_buffer_ipc.dir/tests/test_ring_buffer_ipc.cpp.o -o test_ring_buffer_ipc  -lrt

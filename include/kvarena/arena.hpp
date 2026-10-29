@@ -12,12 +12,12 @@
 #include <time.h>
 #include <atomic>
 
-namespace tokcache {
+namespace kvarena {
 
 constexpr size_t BLOCK_TOKENS = 64;          // Granularity for prefix matching
 constexpr size_t MAX_INDEX_ENTRIES = 4096;   // Fixed-size table in SHM
 constexpr size_t MAX_RESP_ENTRIES = 1024;    // Deterministic response cache entries
-constexpr uint64_t MAGIC_HEADER = 0x544F4B4341434845ULL; // "TOKCACHE"
+constexpr uint64_t MAGIC_HEADER = 0x544F4B4341434845ULL; // "KVARENA"
 
 // Forward declare TokenRef for ring buffer
 struct TokenRef;
@@ -467,4 +467,4 @@ private:
     uint8_t* slab_base_ = nullptr;
 };
 
-} // namespace tokcache
+} // namespace kvarena

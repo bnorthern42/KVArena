@@ -1,7 +1,7 @@
-# AGENTS.md — `libtokcache` Agent Guide
+# AGENTS.md — `libkvarena` Agent Guide
 
 ## Project Overview
-`libtokcache` is a C++20 library that enables multiple local AI agent processes running `llama.cpp` to share:
+`libkvarena` is a C++20 library that enables multiple local AI agent processes running `llama.cpp` to share:
 1. **Layer A (Radix KV-Cache):** Precomputed `llama.cpp` sequence KV states indexed by chained 64-token block hashes.
 2. **Layer B (Zero-Copy Token IPC):** Raw `llama_token` (`int32_t`) arrays in POSIX shared memory referenced via lightweight `TokenRef` descriptors.
 3. **Layer C (Deterministic Response Cache):** Exact output token sequences keyed by `H(model_hash ^ sampling_hash, prompt_tokens)`.
@@ -37,8 +37,8 @@
 ├── ROADMAP.md
 ├── CMakeLists.txt
 ├── include/
-│   ├── tokcache.hpp              # Umbrella header
-│   └── tokcache/
+│   ├── kvarena.hpp              # Umbrella header
+│   └── kvarena/
 │       ├── arena.hpp             # SharedArena, ShmHeader, LRU slab allocator
 │       ├── ring_buffer.hpp       # Lock-free MPMC TokenRef IPC bus
 │       ├── radix_kv.hpp          # Chained block hashing & KV checkpointing
@@ -57,7 +57,7 @@ When running in the Jules VM environment, build and run tests using CMake and CT
 Bash
 
 # Configure (build tests even if a full GGUF model isn't present via mock KV mode)
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DTOKCACHE_BUILD_TESTS=ON -DTOKCACHE_ENABLE_ASAN=ON
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DKVARENA_BUILD_TESTS=ON -DKVARENA_ENABLE_ASAN=ON
 
 # Build all targets
 cmake --build build -j$(nproc)
@@ -67,13 +67,13 @@ ctest --test-dir build --output-on-failure
 
 Shared Memory Cleanup During Testing
 
-    Tests must use unique POSIX shared memory names (e.g., "/tokcache_test_" + std::to_string(getpid())) and explicitly call shm_unlink() in test teardown so /dev/shm does not leak segments across test runs.
+    Tests must use unique POSIX shared memory names (e.g., "/kvarena_test_" + std::to_string(getpid())) and explicitly call shm_unlink() in test teardown so /dev/shm does not leak segments across test runs.
 
 Code Style Guidelines
 
     Standard: C++20 (-std=c++20 -Wall -Wextra -Werror -Wpedantic).
 
-    Headers: Header-only core library under namespace tokcache for zero-overhead inlining, with optional compiled tools/tests.
+    Headers: Header-only core library under namespace kvarena for zero-overhead inlining, with optional compiled tools/tests.
 
     Error Handling: Prefer std::expected-style return codes or bool status flags on hot cache lookup paths; reserve exceptions (std::runtime_error) strictly for unrecoverable initialization or mmap setup failures.
 
@@ -83,4 +83,4 @@ Code Style Guidelines
 ### Quick Tip for Jules Setup
 In the Jules repo settings, you can also add a one-line **Environment Setup Script** if `llama.cpp` isn't vendored as a git submodule yet:
 ```bash
-git submodule update --init --recursive && cmake -B build -DTOKCACHE_BUILD_TESTS=ON && cmake --build build -j$(nproc)
+git submodule update --init --recursive && cmake -B build -DKVARENA_BUILD_TESTS=ON && cmake --build build -j$(nproc)

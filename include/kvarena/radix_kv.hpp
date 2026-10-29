@@ -1,9 +1,9 @@
 #pragma once
 
-#include "tokcache/arena.hpp"
+#include "kvarena/arena.hpp"
 #include <cstdint>
 
-namespace tokcache {
+namespace kvarena {
 
 inline void insert_radix_entry(SharedArena& arena, const RadixBlockEntry& entry) {
     auto* table = arena.header()->radix_table;
@@ -55,4 +55,4 @@ inline bool lookup_radix_entry(SharedArena& arena, uint64_t block_hash, RadixBlo
     return false;
 }
 
-} // namespace tokcache
+} // namespace kvarena
