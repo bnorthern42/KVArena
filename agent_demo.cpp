@@ -1,4 +1,4 @@
-#include "tokcache.hpp"
+#include "kvarena.hpp"
 #include <iostream>
 #include <vector>
 
@@ -13,7 +13,7 @@ std::vector<llama_token> tokenize(const llama_model* model, std::string_view tex
 
 int main() {
     // 1. Initialize shared memory segment (e.g., 512 MB for KV states & token arrays)
-    tokcache::SharedArena shm("/tokcache_bus", 512ULL * 1024 * 1024, true);
+    kvarena::SharedArena shm("/kvarena_bus", 512ULL * 1024 * 1024, true);
 
     // 2. Load llama.cpp model & create separate contexts for Agent A and Agent B
     llama_backend_init();
@@ -25,8 +25,8 @@ int main() {
     llama_context* ctx_agent_a = llama_init_from_model(model, cparams);
     llama_context* ctx_agent_b = llama_init_from_model(model, cparams);
 
-    tokcache::AgentTokenCache cache_a(shm, model, ctx_agent_a, "qwen2.5-coder-7b-q4_k_m");
-    tokcache::AgentTokenCache cache_b(shm, model, ctx_agent_b, "qwen2.5-coder-7b-q4_k_m");
+    kvarena::AgentTokenCache cache_a(shm, model, ctx_agent_a, "qwen2.5-coder-7b-q4_k_m");
+    kvarena::AgentTokenCache cache_b(shm, model, ctx_agent_b, "qwen2.5-coder-7b-q4_k_m");
 
     // ------------------------------------------------------------------------
     // STEP 1: Agent A ingests a large shared document/codebase (e.g., > 64 tokens)
@@ -41,7 +41,7 @@ int main() {
     std::vector<llama_token> shared_tokens = tokenize(model, shared_context, true);
 
     // Agent A publishes the raw token IDs into SHM and gets a 44-byte TokenRef
-    tokcache::TokenRef ref = cache_a.publish_tokens(shared_tokens);
+    kvarena::TokenRef ref = cache_a.publish_tokens(shared_tokens);
 
     // Agent A runs its own task by appending its task tokens and calling prefill_with_kv_cache
     std::vector<llama_token> task_a = tokenize(model, "\nTask A: Summarize architecture.<|im_end|>\n", false);

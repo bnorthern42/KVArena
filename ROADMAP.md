@@ -1,4 +1,4 @@
-# `libtokcache` Roadmap
+# `libkvarena` Roadmap
 
 **Goal:** A high-performance, zero-copy C++20 library enabling local LLM agents backed by `llama.cpp` to share tokenized contexts, Radix-indexed KV-cache states, and deterministic responses over POSIX shared memory (`mmap`).
 
@@ -14,7 +14,7 @@
 
 ## Phase 2: Memory Management, Collision Handling & Lock-Free IPC (Current Target)
 - [ ] **Modular Header Layout**:
-  - Split `include/tokcache.hpp` into `include/tokcache/{arena,ring_buffer,radix_kv,response_cache,client}.hpp`.
+  - Split `include/kvarena.hpp` into `include/kvarena/{arena,ring_buffer,radix_kv,response_cache,client}.hpp`.
 - [ ] **LRU Slab Allocator & Pinning**:
   - Replace the naive wrap-around bump allocator with a block/slab allocator.
   - Add atomic `ref_count` pinning to `RadixBlockEntry` and `TokenRef` allocations so an agent reading a shared span cannot have its memory evicted by a writer.
@@ -42,6 +42,6 @@
 ## Phase 4: Observability, C ABI & Multi-Language Bindings
 - [ ] **Shared Telemetry Counters**:
   - Track `prefill_tokens_saved`, `kv_bytes_hydrated`, `resp_cache_hits`, `slab_evictions`, and `lock_contention_ns` via atomic counters in `ShmHeader`.
-  - Build a lightweight CLI inspector (`tokcache-top`) that attaches to `/tokcache_bus` read-only and displays live cache utilization and agent hit rates.
-- [ ] **Stable C ABI (`tokcache_c.h`)**:
+  - Build a lightweight CLI inspector (`kvarena-top`) that attaches to `/kvarena_bus` read-only and displays live cache utilization and agent hit rates.
+- [ ] **Stable C ABI (`kvarena_c.h`)**:
   - Expose an `extern "C"` wrapper so Python, Rust, Go, or Elixir agent orchestrators can pass `TokenRef` handles to C++ `llama.cpp` worker processes.

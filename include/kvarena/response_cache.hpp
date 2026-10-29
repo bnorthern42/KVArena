@@ -1,11 +1,11 @@
 #pragma once
 
-#include "tokcache/arena.hpp"
+#include "kvarena/arena.hpp"
 #include "llama.h"
 #include <span>
 #include <vector>
 
-namespace tokcache {
+namespace kvarena {
 
 inline void insert_response_entry(SharedArena& arena, const ResponseCacheEntry& entry) {
     auto* table = arena.header()->resp_table;
@@ -88,4 +88,4 @@ inline void store_response_cache(SharedArena& arena, uint64_t model_hash, std::s
     arena.unlock();
 }
 
-} // namespace tokcache
+} // namespace kvarena

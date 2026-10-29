@@ -6,4 +6,4 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/app/include -I/app/tests/mock_llama
 
-CXX_FLAGS = -std=c++20 -Wall -Wextra -Werror -Wpedantic
+CXX_FLAGS = -g -std=c++20 -Wall -Wextra -Werror -Wpedantic -fsanitize=address,undefined -fno-omit-frame-pointer

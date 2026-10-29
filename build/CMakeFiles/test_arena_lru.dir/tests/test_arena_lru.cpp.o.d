@@ -1,6 +1,6 @@
 CMakeFiles/test_arena_lru.dir/tests/test_arena_lru.cpp.o: \
  /app/tests/test_arena_lru.cpp /usr/include/stdc-predef.h \
- /app/include/tokcache.hpp /app/include/tokcache/arena.hpp \
+ /app/include/kvarena.hpp /app/include/kvarena/arena.hpp \
  /usr/include/c++/13/cstdint \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
@@ -191,8 +191,8 @@ CMakeFiles/test_arena_lru.dir/tests/test_arena_lru.cpp.o: \
  /usr/include/x86_64-linux-gnu/asm/unistd.h \
  /usr/include/x86_64-linux-gnu/asm/unistd_64.h \
  /usr/include/x86_64-linux-gnu/bits/syscall.h \
- /usr/include/c++/13/bits/std_mutex.h /app/include/tokcache/radix_kv.hpp \
- /app/include/tokcache/response_cache.hpp /app/tests/mock_llama/llama.h \
+ /usr/include/c++/13/bits/std_mutex.h /app/include/kvarena/radix_kv.hpp \
+ /app/include/kvarena/response_cache.hpp /app/tests/mock_llama/llama.h \
  /usr/include/c++/13/algorithm /usr/include/c++/13/bits/stl_algo.h \
  /usr/include/c++/13/bits/algorithmfwd.h \
  /usr/include/c++/13/bits/stl_heap.h \
@@ -213,7 +213,7 @@ CMakeFiles/test_arena_lru.dir/tests/test_arena_lru.cpp.o: \
  /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
  /usr/include/c++/13/bits/vector.tcc /usr/include/c++/13/span \
- /usr/include/c++/13/array /app/include/tokcache/client.hpp \
+ /usr/include/c++/13/array /app/include/kvarena/client.hpp \
  /usr/include/c++/13/iostream /usr/include/c++/13/ostream \
  /usr/include/c++/13/ios /usr/include/c++/13/bits/ios_base.h \
  /usr/include/c++/13/ext/atomicity.h \

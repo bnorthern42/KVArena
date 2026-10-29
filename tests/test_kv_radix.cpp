@@ -1,4 +1,4 @@
-#include "tokcache.hpp"
+#include "kvarena.hpp"
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -31,13 +31,13 @@ struct ShmCleanupGuard {
 } // namespace
 
 int main() {
-    const std::string shm_name = "/tokcache_test_" + std::to_string(getpid());
+    const std::string shm_name = "/kvarena_test_" + std::to_string(getpid());
     ShmCleanupGuard cleanup(shm_name);
 
     // Create 16 MB shared memory arena in parent before forking
     constexpr size_t ARENA_BYTES = 16ULL * 1024 * 1024;
     {
-        tokcache::SharedArena init_arena(shm_name, ARENA_BYTES, true);
+        kvarena::SharedArena init_arena(shm_name, ARENA_BYTES, true);
     }
 
     // Create a pipe solely to pass the 44-byte TokenRef struct from Agent A -> Agent B
@@ -59,15 +59,15 @@ int main() {
     if (pid_a == 0) {
         close(pipe_fd[0]); // Close read end
 
-        tokcache::SharedArena arena_a(shm_name, ARENA_BYTES, false);
+        kvarena::SharedArena arena_a(shm_name, ARENA_BYTES, false);
         llama_model model{};
         llama_context ctx_a{};
         ctx_a.model = &model;
 
-        tokcache::AgentTokenCache cache_a(arena_a, &model, &ctx_a, "mock-model-v1");
+        kvarena::AgentTokenCache cache_a(arena_a, &model, &ctx_a, "mock-model-v1");
 
         auto doc_tokens = make_tokens(&model, shared_doc, true);
-        tokcache::TokenRef ref = cache_a.publish_tokens(doc_tokens);
+        kvarena::TokenRef ref = cache_a.publish_tokens(doc_tokens);
 
         auto task_a_tokens = make_tokens(&model, suffix_a, false);
         std::vector<llama_token> full_prompt_a = doc_tokens;
@@ -99,8 +99,8 @@ int main() {
     // ========================================================================
     pid_t pid_b = fork();
     if (pid_b == 0) {
-        tokcache::SharedArena arena_b(shm_name, ARENA_BYTES, false);
-        tokcache::TokenRef ref{};
+        kvarena::SharedArena arena_b(shm_name, ARENA_BYTES, false);
+        kvarena::TokenRef ref{};
         while (!arena_b.header()->ipc_bus.pop(ref)) { usleep(10); }
 
         llama_model model{};
@@ -109,7 +109,7 @@ int main() {
         ctx_b_cached.model = &model;
         ctx_b_baseline.model = &model;
 
-        tokcache::AgentTokenCache cache_b(arena_b, &model, &ctx_b_cached, "mock-model-v1");
+        kvarena::AgentTokenCache cache_b(arena_b, &model, &ctx_b_cached, "mock-model-v1");
 
         // 1. Verify Layer B: Zero-copy token resolution matches Agent A's tokens
         std::span<const llama_token> shared_span = cache_b.resolve_tokens(ref);

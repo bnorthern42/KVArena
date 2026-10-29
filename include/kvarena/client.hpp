@@ -1,8 +1,8 @@
 #pragma once
 
-#include "tokcache/arena.hpp"
-#include "tokcache/radix_kv.hpp"
-#include "tokcache/response_cache.hpp"
+#include "kvarena/arena.hpp"
+#include "kvarena/radix_kv.hpp"
+#include "kvarena/response_cache.hpp"
 
 #include "llama.h"
 #include <span>
@@ -11,7 +11,7 @@
 #include <string_view>
 #include <atomic>
 
-namespace tokcache {
+namespace kvarena {
 
 // ============================================================================
 // Unified Agent Cache Client (Integrates Layers A, B, and C with llama.cpp)
@@ -226,4 +226,4 @@ private:
     uint64_t model_hash_;
 };
 
-} // namespace tokcache
+} // namespace kvarena
